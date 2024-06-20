@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Question Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Question Generator</h1>
+    <form id="generate-form">
+        <label for="topic">Topic:</label>
+        <input type="text" id="topic" name="topic" required>
+
+        <label for="num_questions">Number of Questions:</label>
+        <input type="number" id="num_questions" name="num_questions" required>
+
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty" name="difficulty">
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+        </select>
+
+        <label for="language">Programming Language:</label>
+        <input type="text" id="language" name="language" required>
+
+        <button type="submit">Generate</button>
+    </form>
+
+    <h2>Generated Questions</h2>
+    <ul id="questions-list"></ul>
+
+    <h2>Export Questions</h2>
+    <form id="export-form">
+        <label for="format">Export Format:</label>
+        <select id="format" name="format">
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+        </select>
+        <button type="submit">Export</button>
+    </form>
+
+    <script>
+        document.getElementById('generate-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const topic = document.getElementById('topic').value;
+            const num_questions = document.getElementById('num_questions').value;
+            const difficulty = document.getElementById('difficulty').value;
+            const language = document.getElementById('language').value;
+
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topic, num_questions, difficulty, language })
+            });
+            const data = await response.json();
+            const questionsList = document.getElementById('questions-list');
+            questionsList.innerHTML = '';
+            if (data.questions) {
+                data.questions.forEach(question => {
+                    const li = document.createElement('li');
+                    li.textContent = question;
+                    questionsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'No questions Generated';
+                questionsList.appendChild(li);
+            }
+        });
+
+        document.getElementById('export-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const format = document.getElementById('format').value;
+
+            const response = await fetch('/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ format })
+            });
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `exported_questions.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
